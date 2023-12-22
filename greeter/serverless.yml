@@ -1,0 +1,42 @@
+service: gocount
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: provided.al2
+  region: ap-southeast-1
+  deploymentMethod: direct
+
+
+package:
+  individually: true
+  patterns:
+    - '!./**'
+    - ./bin/**
+    - bootstrap
+
+functions:
+  get:
+    handler: bin/greeter
+    memorySize: 128
+    timeout: 10
+    environment:
+      SECRET_KEY: ics-secret-key
+    package:
+      include:
+        - ./bin/greeter
+    iamRoleStatementsName: greeter-lambda
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - 'secretsmanager:GetSecretValue'
+          - 'secretsmanager:DescribeSecret'
+        Resource: 'arn:aws:secretsmanager:ap-southeast-1:*:secret:ics-secret-key-*'
+    events:
+      - http:
+          path: /
+          method: get
+
+plugins:
+  - serverless-iam-roles-per-function
